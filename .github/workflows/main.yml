@@ -1,4 +1,4 @@
-name: Playwright Tests + Allure
+name: Playwright Tests + Allure (Fast)
 
 on:
   push:
@@ -21,21 +21,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'   # ✅ built-in npm cache
 
       - name: Install dependencies
         run: npm ci
 
+      # ✅ Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # ✅ Install only Chromium (much faster)
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install chromium --with-deps
 
       - name: Run Playwright tests
         run: npx playwright test
 
+      # ✅ Install Allure locally (faster than global)
       - name: Install Allure CLI
-        run: npm install -g allure-commandline
+        run: npm install allure-commandline --save-dev
 
       - name: Generate Allure report
-        run: allure generate allure-results --clean -o allure-report
+        run: npx allure generate allure-results --clean -o allure-report
 
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
